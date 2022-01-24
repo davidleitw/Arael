@@ -1,17 +1,19 @@
 #include "bpf_controller.h"
+#include "bpf_module_list.h"
 
-BpfController::BpfController(std::vector<std::string> &probe_names) {
-    load_ebpf_probe_names(probe_names);
+
+
+BpfController::BpfController(const std::vector<Bpf_Module*> &bpf_modules) {
+    load_bpf_module_names(bpf_modules);
+
 }
 
 BpfController::~BpfController() {
     
 }
 
-void BpfController::load_ebpf_probe_names(std::vector<std::string> &probe_names) {
-    for (const auto &probe_name: probe_names) {
-        probe_names_.push_back(probe_name);
-        skel_names_.push_back(probe_name+".skel.h");
-    }
+void BpfController::load_bpf_module_names(const std::vector<Bpf_Module*> &bpf_modules) {
+    bpf_modules_ = bpf_modules;
 }
+
 
