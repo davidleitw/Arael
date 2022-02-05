@@ -61,7 +61,7 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
 int BpfLoader::attachBpfProgs(BpfModule &ctx) {
   for (const auto &program : ctx.progs) {
     auto link = ::bpf_program__attach(program.second.prog);
-    if (::linbpf_get_error(link)) {
+    if (::libbpf_get_error(link)) {
       // TODO: Add log to record error.
       program.second.link = nullptr;
       return 1;
@@ -77,7 +77,7 @@ int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
     // TODO: Add log to record error.
     return 1;
   }
-
+  
   program->second.link = ::bpf_program__attach(program->second.prog);
   if (::libbpf_get_error(program->second.link)) {
     // TODO: Add log to record error.
@@ -89,12 +89,39 @@ int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
   return 0;
 }
 
-int BpfLoader::detachBpfModule(const std::string &module_path) {}
+int BpfLoader::detachBpfProgs(BpfModule &ctx) {
+  for (const auto &program: ctx.progs) {
+    if (program.second.is_attached && program.second.link) {
+      const auto err = ::bpf_link__detach(program.second.link);
+      if (err) {
+        // TODO: Add log to record error.
+        return 1;
+      }
+      program.second.link = nullptr;
+      program.second.is_attached = false;
+    }
+  }
+  return 0;
+}
 
-int BpfLoader::detachBpfProg(const std::string &module_path,
-                             const std::string &prog_name) {}
+int BpfLoader::detachBpfProg(BpfModule &ctx, const std::string &prog_name) {
+  auto program = ctx.progs.find(prog_name);
+  if (program == ctx.progs.end()) {
+    // TODO: Add log to record error.
+    return 1;
+  }
 
-int BpfLoader::destroyBpfModule(const std::string &module_path) {}
+  if (program->second.is_attached && program->second.link) {
+    const auto err = ::bpf_link__detach(program->second.link); 
+    if (err) {
+      // TODO: Add log to record error.
+      return 1;
+    }
+    program->second.link = nullptr;
+    program->second.is_attached = true;
+  }
+  return 0;
+}
 
 int BpfLoader::closeBpfFile(::bpf_object *obj) {
   ::bpf_object__close(obj);

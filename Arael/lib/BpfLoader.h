@@ -20,6 +20,8 @@ class BpfLoader {
 
   int attachBpfProgs(BpfModule &ctx);
   int attachBpfProg(BpfModule &ctx, const std::string &prog_name);
+  int detachBpfProgs(BpfModule &ctx);
+  int detachBpfProg(BpfModule &ctx, const std::string &prog_name);
 
   int closeBpfFile(::bpf_object *obj);
 

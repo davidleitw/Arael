@@ -92,6 +92,56 @@ int BpfAdapter::attachBpfModule(const std::string &module_path) {
     // TODO: Add log to record error.
     return 1;
   }
+  return 0;
+}
+
+int BpfAdapter::attachBpfProg(const std::string &module_path,
+                              const std::string &prog_name) {
+  auto mod = bpf_modules_.find(module_path);
+  if (mod == bpf_modules_.end()) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+
+  const int err = loader_->attachBpfProg(mod, prog_name);
+  if (err) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+
+  return 0;
+}
+
+int BpfAdapter::detachBpfModule(const std::string &module_path) {
+  auto mod = bpf_modules_.find(module_path);
+  if (mod == bpf_modules_.end()) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+
+  const int err = loader_->detachBpfProg(mod);
+  if (err) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+  return 0;
+}
+
+int BpfAdapter::detachBpfProg(const std::string &module_path,
+                              const std::string &prog_name) {
+  auto mod = bpf_modules_.find(module_path);
+  if (mod == bpf_modules_.end()) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+
+  const int err = loader_->detachBpfProg(mod, prog_name);
+  if (err) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+
+  return 0;
 }
 
 }  // namespace arael
