@@ -41,7 +41,7 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
       // TODO: Add log to record error.
       return closeBpfFile(obj);
     }
-    ctx.progs[prog_name] = BpfProgprogram(prog, nullptr, false);
+    ctx.progs[prog_name] = BpfProgStatus(prog, nullptr, false);
   }
 
   ::bpf_map__for_each(map, obj) {
@@ -77,7 +77,7 @@ int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
     // TODO: Add log to record error.
     return kError;
   }
-
+  
   program->second.link = ::bpf_program__attach(program->second.prog);
   if (::libbpf_get_error(program->second.link)) {
     // TODO: Add log to record error.
