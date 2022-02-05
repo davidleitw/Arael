@@ -15,9 +15,13 @@ class BpfLoader {
  public:
   BpfLoader() = {};
 
-  int parseBpfModulePath(const std::string &path, BpfModule &ctx);
-  int loadBpfModule(::bpf_object *obj, BpfModule &ctx);
-  int closeBpfModule(::bpf_object *obj);
+  int openBpfFile(const std::string &path, BpfModule &ctx);
+  int loadBpfFile(::bpf_object *obj, BpfModule &ctx);
+
+  int attachBpfProgs(BpfModule &ctx);
+  int attachBpfProg(BpfModule &ctx, const std::string &prog_name);
+
+  int closeBpfFile(::bpf_object *obj);
 
  private:
 };

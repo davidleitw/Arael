@@ -2,7 +2,7 @@
 
 namespace arael {
 
-class AraelConfig {
+class  AraelConfig {
 
 };
 

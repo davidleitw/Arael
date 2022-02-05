@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 extern "C" {
+#include <assert.h>
 #include <sys/resource.h>
 }
 
@@ -17,6 +18,12 @@ void setBpfAdapterLimit() {
     // TODO: Add log to record error.
     throw std::runtime_error("Error with setting limited locked memory.");
   }
+}
+
+// Helper function, check file path include ".bpf.o" suffix.
+bool suffixCheck(const std::string &fp) {
+  return fp.length() >= 6 &&
+         (fp.substr(fp.length() - 6, fp.length()) == ".bpf.o");
 }
 
 }  // namespace
@@ -34,7 +41,7 @@ BpfAdapter::BpfAdapter(const std::vector<std::string> &module_paths,
   loader_ = make_unique<BpfLoader>();
 
   for (const auto &module_path) {
-    RegisterBpfModule(module_path);
+    loadBpfModule(module_path);
   }
 
   if (set_limit) {
@@ -42,15 +49,29 @@ BpfAdapter::BpfAdapter(const std::vector<std::string> &module_paths,
   }
 }
 
-int BpfAdapter::RegisterBpfModule(const std::string &module_path) {
-  // Already exist same module path.
-  if (bpf_modules_.find(module_path) != bpf_modules_.end()) {
+BpfAdapter::BpfAdapter(const std::filesystem::path &module_dir,
+                       bool set_limit) {
+  assert(std::filesystem::is_directory(module_dir));
+
+  for (const auto &f : std::filesystem::directory_iterator(module_dir)) {
+    loadBpfModule(static_cast<std::string>(f.path()));
+  }
+
+  if (set_limit) {
+    setBpfAdapterLimit()
+  }
+}
+
+int BpfAdapter::loadBpfModule(const std::string &module_path) {
+  if (!suffixCheck(module_path) ||
+      (bpf_modules_.find(module_path) != bpf_modules_.end())) {
     // TODO: Add log to record error.
     return 1;
   }
 
   std::unique_ptr<BpfModule> mod = make_unique<BpfModule>();
-  if (loader_->parseBpfModulePath(module_path, mod)) {
+  const int err = loader_->openBpfFile(module_path, mod);
+  if (err) {
     // TODO: Add log to record error.
     return 1;
   }
@@ -59,15 +80,18 @@ int BpfAdapter::RegisterBpfModule(const std::string &module_path) {
   return 0;
 }
 
-int BpfAdapter::RegisterBpfModules(
-    const std::vector<std::string> &module_paths) {
-  for (const auto &module_path) {
-    if (RegisterBpfModule(module_path)) {
-      // TODO: Add log to record error.
-      return 1;
-    }
+int BpfAdapter::attachBpfModule(const std::string &module_path) {
+  auto mod = bpf_modules_.find(module_path);
+  if (mod == bpf_modules_.end()) {
+    // TODO: Add log to record error.
+    return 1;
   }
-  return 0;
+
+  const int err = loader_->attachBpfProgs(mod);
+  if (err) {
+    // TODO: Add log to record error.
+    return 1;
+  }
 }
 
 }  // namespace arael

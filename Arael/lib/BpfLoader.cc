@@ -12,7 +12,7 @@ namespace {}
 
 namespace arael {
 
-int BpfLoader::parseBpfModule(const std::string &module_path, BpfModule &ctx) {
+int BpfLoader::openBpfFile(const std::string &module_path, BpfModule &ctx) {
   auto obj = ::bpf_object__open(module_path.c_str());
   const auto err = ::libbpf_get_error(obj);
 
@@ -21,41 +21,82 @@ int BpfLoader::parseBpfModule(const std::string &module_path, BpfModule &ctx) {
     return kError;
   }
 
+  ctx.module_name = module_path;
   ctx.object = obj;
-  return loadBpfModule(obj, ctx);
+  return loadBpfFile(obj, ctx);
 }
 
-int BpfLoader::loadBpfModule(::bpf_object *obj, BpfModule &ctx) {
+int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
   ::bpf_program *prog;
   ::bpf_map *map;
 
   if (bpf_object__load(obj)) {
     // TODO: Add log to record error.
-    return closeBpfModule(obj);
+    return closeBpfFile(obj);
   }
 
-  bpf_object__for_each_program(prog, obj) {
+  ::bpf_object__for_each_program(prog, obj) {
     std::string prog_name(::bpf_program__name(prog));
     if (ctx.progs.find(prog_name) != ctx.progs.end()) {
       // TODO: Add log to record error.
-      return closeBpfModule(obj);
+      return closeBpfFile(obj);
     }
-    ctx.progs[prog_name] = -1;
+    ctx.progs[prog_name] = BpfProgprogram(prog, nullptr, false);
   }
 
-  bpf_map__for_each(map, obj) {
+  ::bpf_map__for_each(map, obj) {
     std::string map_name(::bpf_map__name(map));
+    const int map_fd = ::bpf_map__fd(map);
+
     if (ctx.maps.find(map_name) != ctx.maps.end()) {
       // TODO: Add log to record error.
-      return closeBpfModule(obj);
+      return closeBpfFile(obj);
     }
-    ctx.maps[map_name] = -1;
+    ctx.maps[map_name] = map_fd;
   }
 
   return kSuccess;
 }
 
-int BpfLoader::closeBpfModule(::bpf_object *obj) {
+int BpfLoader::attachBpfProgs(BpfModule &ctx) {
+  for (const auto &program : ctx.progs) {
+    auto link = ::bpf_program__attach(program.second.prog);
+    if (::linbpf_get_error(link)) {
+      // TODO: Add log to record error.
+      program.second.link = nullptr;
+      return 1;
+    }
+    program.second.is_attached = true;
+  }
+  return 0;
+}
+
+int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
+  auto program = ctx.progs.find(prog_name);
+  if (program == ctx.progs.end()) {
+    // TODO: Add log to record error.
+    return 1;
+  }
+
+  program->second.link = ::bpf_program__attach(program->second.prog);
+  if (::libbpf_get_error(program->second.link)) {
+    // TODO: Add log to record error.
+    program->second.link = nullptr;
+    return 1;
+  }
+
+  program->second.is_attached = true;
+  return 0;
+}
+
+int BpfLoader::detachBpfModule(const std::string &module_path) {}
+
+int BpfLoader::detachBpfProg(const std::string &module_path,
+                             const std::string &prog_name) {}
+
+int BpfLoader::destroyBpfModule(const std::string &module_path) {}
+
+int BpfLoader::closeBpfFile(::bpf_object *obj) {
   ::bpf_object__close(obj);
   return kError;
 }
