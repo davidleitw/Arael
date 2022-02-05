@@ -64,63 +64,63 @@ int BpfLoader::attachBpfProgs(BpfModule &ctx) {
     if (::libbpf_get_error(link)) {
       // TODO: Add log to record error.
       program.second.link = nullptr;
-      return 1;
+      return kError;
     }
     program.second.is_attached = true;
   }
-  return 0;
+  return kSuccess;
 }
 
 int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
   auto program = ctx.progs.find(prog_name);
   if (program == ctx.progs.end()) {
     // TODO: Add log to record error.
-    return 1;
+    return kError;
   }
-  
+
   program->second.link = ::bpf_program__attach(program->second.prog);
   if (::libbpf_get_error(program->second.link)) {
     // TODO: Add log to record error.
     program->second.link = nullptr;
-    return 1;
+    return kError;
   }
 
   program->second.is_attached = true;
-  return 0;
+  return kSuccess;
 }
 
 int BpfLoader::detachBpfProgs(BpfModule &ctx) {
-  for (const auto &program: ctx.progs) {
+  for (const auto &program : ctx.progs) {
     if (program.second.is_attached && program.second.link) {
       const auto err = ::bpf_link__detach(program.second.link);
       if (err) {
         // TODO: Add log to record error.
-        return 1;
+        return kError;
       }
       program.second.link = nullptr;
       program.second.is_attached = false;
     }
   }
-  return 0;
+  return kSuccess;
 }
 
 int BpfLoader::detachBpfProg(BpfModule &ctx, const std::string &prog_name) {
   auto program = ctx.progs.find(prog_name);
   if (program == ctx.progs.end()) {
     // TODO: Add log to record error.
-    return 1;
+    return kError;
   }
 
   if (program->second.is_attached && program->second.link) {
-    const auto err = ::bpf_link__detach(program->second.link); 
+    const auto err = ::bpf_link__detach(program->second.link);
     if (err) {
       // TODO: Add log to record error.
-      return 1;
+      return kError;
     }
     program->second.link = nullptr;
     program->second.is_attached = true;
   }
-  return 0;
+  return kSuccess;
 }
 
 int BpfLoader::closeBpfFile(::bpf_object *obj) {
