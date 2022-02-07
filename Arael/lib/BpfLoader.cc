@@ -8,7 +8,6 @@ constexpr int kError = 1;
 constexpr int kSuccess = 0;
 }  // namespace
 
-namespace {}
 
 namespace arael {
 
@@ -77,7 +76,7 @@ int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
     // TODO: Add log to record error.
     return kError;
   }
-  
+
   program->second.link = ::bpf_program__attach(program->second.prog);
   if (::libbpf_get_error(program->second.link)) {
     // TODO: Add log to record error.
@@ -118,7 +117,7 @@ int BpfLoader::detachBpfProg(BpfModule &ctx, const std::string &prog_name) {
       return kError;
     }
     program->second.link = nullptr;
-    program->second.is_attached = true;
+    program->second.is_attached = false;
   }
   return kSuccess;
 }

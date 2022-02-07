@@ -9,10 +9,6 @@
 #include "BpfLoader.h"
 #include "BpfModule.h"
 
-extern "C" {
-#include <bpf/bpf.h>
-}
-
 namespace arael {
 
 class BpfAdapter {
@@ -40,6 +36,6 @@ class BpfAdapter {
  private:
   std::unique_ptr<BpfLoader> loader_;
   std::unordered_map<std::string, std::unique_ptr<BpfModule>> bpf_modules_;
-}
+};
 
 }  // namespace arael

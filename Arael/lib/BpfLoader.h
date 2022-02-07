@@ -13,7 +13,7 @@ namespace arael {
 
 class BpfLoader {
  public:
-  BpfLoader() = {};
+  BpfLoader() = default;
 
   int openBpfFile(const std::string &path, BpfModule &ctx);
   int loadBpfFile(::bpf_object *obj, BpfModule &ctx);
