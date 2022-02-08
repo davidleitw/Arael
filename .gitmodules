@@ -1,0 +1,3 @@
+[submodule "Arael/lib/bpf/libbpf"]
+	path = Arael/lib/bpf/libbpf
+	url = https://github.com/libbpf/libbpf
