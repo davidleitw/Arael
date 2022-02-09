@@ -38,14 +38,14 @@ BpfAdapter::BpfAdapter(bool set_limit) {
 
 BpfAdapter::BpfAdapter(const std::vector<std::string> &module_paths,
                        bool set_limit) {
-  loader_ = make_unique<BpfLoader>();
+  loader_ = std::make_unique<BpfLoader>();
 
   for (const auto &module_path) {
     loadBpfModule(module_path);
   }
 
   if (set_limit) {
-    setBpfAdapterLimit()
+    setBpfAdapterLimit();
   }
 }
 
@@ -58,7 +58,7 @@ BpfAdapter::BpfAdapter(const std::filesystem::path &module_dir,
   }
 
   if (set_limit) {
-    setBpfAdapterLimit()
+    setBpfAdapterLimit();
   }
 }
 

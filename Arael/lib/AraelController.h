@@ -5,7 +5,6 @@
 #include "AraelConfig.h"
 #include "BpfAdapter.h"
 
-
 namespace arael {
 
 class AraelController {
@@ -25,8 +24,7 @@ class AraelController {
   void destroyBpfProgs();
 
  private:
-  unique_ptr<BpfAdapter> adapter_;
-  
+  std::unique_ptr<BpfAdapter> adapter_;
 }
 
 }  // namespace arael

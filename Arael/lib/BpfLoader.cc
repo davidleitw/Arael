@@ -1,5 +1,5 @@
 
-#include <BpfLoader.h>
+#include "BpfLoader.h"
 
 #include <string>
 
@@ -34,7 +34,7 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
     return closeBpfFile(obj);
   }
 
-  ::bpf_object__for_each_program(prog, obj) {
+  bpf_object__for_each_program(prog, obj) {
     std::string prog_name(::bpf_program__name(prog));
     if (ctx.progs.find(prog_name) != ctx.progs.end()) {
       // TODO: Add log to record error.
@@ -43,7 +43,7 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
     ctx.progs[prog_name] = BpfProgStatus(prog, nullptr, false);
   }
 
-  ::bpf_map__for_each(map, obj) {
+  bpf_map__for_each(map, obj) {
     std::string map_name(::bpf_map__name(map));
     const int map_fd = ::bpf_map__fd(map);
 
@@ -58,9 +58,9 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
 }
 
 int BpfLoader::attachBpfProgs(BpfModule &ctx) {
-  for (const auto &program : ctx.progs) {
-    auto link = ::bpf_program__attach(program.second.prog);
-    if (::libbpf_get_error(link)) {
+  for (auto &program : ctx.progs) {
+    program.second.link = ::bpf_program__attach(program.second.prog);
+    if (::libbpf_get_error(program.second.link)) {
       // TODO: Add log to record error.
       program.second.link = nullptr;
       return kError;
@@ -89,7 +89,7 @@ int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
 }
 
 int BpfLoader::detachBpfProgs(BpfModule &ctx) {
-  for (const auto &program : ctx.progs) {
+  for (auto &program : ctx.progs) {
     if (program.second.is_attached && program.second.link) {
       const auto err = ::bpf_link__detach(program.second.link);
       if (err) {

@@ -17,6 +17,7 @@ struct BpfProgStatus {
   
   bool is_attached;
 
+  BpfProgStatus() = default;
   BpfProgStatus(::bpf_program *p, ::bpf_link *l, bool attached)
       : prog(p), link(l), is_attached(attached){};
 };

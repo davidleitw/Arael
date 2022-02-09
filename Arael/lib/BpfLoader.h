@@ -9,6 +9,8 @@ extern "C" {
 #include <bpf/libbpf.h>
 }
 
+// clang++ -std=c++17 BpfLoader.cc -c -I bpf/.output
+
 namespace arael {
 
 class BpfLoader {
