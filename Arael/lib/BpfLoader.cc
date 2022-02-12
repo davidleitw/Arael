@@ -1,6 +1,6 @@
-
 #include "BpfLoader.h"
 
+#include <iostream>
 #include <string>
 
 namespace {
@@ -13,11 +13,11 @@ namespace arael {
 
 int BpfLoader::openBpfFile(const std::string &module_path, BpfModule &ctx) {
   auto obj = ::bpf_object__open(module_path.c_str());
-  const auto err = ::libbpf_get_error(obj);
-
-  if (err) {
+  const int err = ::libbpf_get_error(obj);
+  
+  if (::libbpf_get_error(obj)) {
     // TODO: Add log to record error.
-    return kError;
+    return closeBpfFile(obj);
   }
 
   ctx.module_name = module_path;
@@ -29,7 +29,7 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
   ::bpf_program *prog;
   ::bpf_map *map;
 
-  if (bpf_object__load(obj)) {
+  if (::bpf_object__load(obj)) {
     // TODO: Add log to record error.
     return closeBpfFile(obj);
   }
@@ -53,7 +53,6 @@ int BpfLoader::loadBpfFile(::bpf_object *obj, BpfModule &ctx) {
     }
     ctx.maps[map_name] = map_fd;
   }
-
   return kSuccess;
 }
 
@@ -91,7 +90,7 @@ int BpfLoader::attachBpfProg(BpfModule &ctx, const std::string &prog_name) {
 int BpfLoader::detachBpfProgs(BpfModule &ctx) {
   for (auto &program : ctx.progs) {
     if (program.second.is_attached && program.second.link) {
-      const auto err = ::bpf_link__detach(program.second.link);
+      const int err = ::bpf_link__destroy(program.second.link);
       if (err) {
         // TODO: Add log to record error.
         return kError;
@@ -111,7 +110,7 @@ int BpfLoader::detachBpfProg(BpfModule &ctx, const std::string &prog_name) {
   }
 
   if (program->second.is_attached && program->second.link) {
-    const auto err = ::bpf_link__detach(program->second.link);
+    const int err = ::bpf_link__destroy(program->second.link);
     if (err) {
       // TODO: Add log to record error.
       return kError;

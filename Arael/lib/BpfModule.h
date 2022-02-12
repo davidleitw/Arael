@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include <iostream>
+#include <unordered_map>
 
 extern "C" {
 #include <bpf/libbpf.h>
@@ -23,13 +24,14 @@ struct BpfProgStatus {
 };
 
 struct BpfModule {
+  BpfModule() = default;
   ~BpfModule() {
     for (auto prog : progs) {
-      if (prog.second.link) {
+      if (prog.second.link && prog.second.is_attached) {
         ::bpf_link__destroy(prog.second.link);
       }
     }
-    ::bpf_object__close(object);
+    object = nullptr;
   }
   /**
    * BpfModule use the path of bpf object file as module_name
