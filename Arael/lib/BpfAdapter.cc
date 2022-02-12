@@ -69,7 +69,7 @@ int BpfAdapter::loadBpfModule(const std::string &module_path) {
     return 1;
   }
 
-  std::unique_ptr<BpfModule> mod = make_unique<BpfModule>();
+  std::unique_ptr<BpfModule> mod = std::make_unique<BpfModule>();
   const int err = loader_->openBpfFile(module_path, mod);
   if (err) {
     // TODO: Add log to record error.

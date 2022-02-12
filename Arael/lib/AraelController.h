@@ -25,6 +25,6 @@ class AraelController {
 
  private:
   std::unique_ptr<BpfAdapter> adapter_;
-}
+};
 
 }  // namespace arael
