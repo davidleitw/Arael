@@ -10,6 +10,7 @@ VMLINUX := vmlinux/vmlinux.h
 # libbpf to avoid dependency on system-wide headers, which could be missing or
 # outdated
 INCLUDES := -I$(OUTPUT) -I libbpf/include/uapi -I$(dir $(VMLINUX))
+# INCLUDES := -I$(OUTPUT) -I libbpf/include/uapi -I $(VMLINUX)
 CFLAGS := -g -Wall
 ARCH := $(shell uname -m | sed 's/x86_64/x86/' | sed 's/aarch64/arm64/' | sed 's/ppc64le/powerpc/' | sed 's/mips.*/mips/')
 
@@ -20,7 +21,7 @@ APPS = bootstrap
 # architecture-specific dirs will be "missing" on some architectures/distros -
 # headers such as asm/types.h, asm/byteorder.h, asm/socket.h, asm/sockios.h,
 # sys/cdefs.h etc. might be missing.
-#
+#`
 # Use '-idirafter': Don't interfere with include mechanics except where the
 # build would have failed anyways.
 CLANG_BPF_SYS_INCLUDES = $(shell $(CLANG) -v -E - </dev/null 2>&1 \
@@ -39,7 +40,7 @@ else
 endif
 
 .PHONY: all
-all: $(APPS)
+all: $(APPS).bpf.o $(LIBBPF_OBJ)
 
 .PHONY: clean
 clean:
@@ -59,27 +60,11 @@ $(LIBBPF_OBJ): $(wildcard $(LIBBPF_SRC)/*.[ch] $(LIBBPF_SRC)/Makefile) | $(OUTPU
 		    install
 
 # Build BPF code
-$(OUTPUT)/%.bpf.o: %.bpf.c $(LIBBPF_OBJ) $(wildcard %.h) $(VMLINUX) | $(OUTPUT)
+$(APPS).bpf.o: $(APPS).bpf.c $(LIBBPF_OBJ) $(wildcard %.h) $(VMLINUX)  $(OUTPUT)
 	$(call msg,BPF,$@)
 	$(Q)$(CLANG) -g -O2 -target bpf -D__TARGET_ARCH_$(ARCH) $(INCLUDES) $(CLANG_BPF_SYS_INCLUDES) -c $(filter %.c,$^) -o $@
 	$(Q)$(LLVM_STRIP) -g $@ # strip useless DWARF info
 
-# Generate BPF skeletons
-$(OUTPUT)/%.skel.h: $(OUTPUT)/%.bpf.o | $(OUTPUT)
-	$(call msg,GEN-SKEL,$@)
-	$(Q)$(BPFTOOL) gen skeleton $< > $@
-
-# Build user-space code
-$(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
-
-$(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
-	$(call msg,CC,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
-
-# Build application binary
-$(APPS): %: $(OUTPUT)/%.o $(LIBBPF_OBJ) | $(OUTPUT)
-	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $^ -lelf -lz -o $@
 
 # delete failed targets
 .DELETE_ON_ERROR:
